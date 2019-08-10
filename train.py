@@ -18,7 +18,9 @@ from sklearn.metrics import accuracy_score
 from layers import *
 from utils import *
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
+print(torch.cuda.is_available())
 np.random.seed()
 torch.manual_seed(0)
 

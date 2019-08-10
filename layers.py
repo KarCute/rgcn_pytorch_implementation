@@ -8,7 +8,8 @@ from tqdm import tqdm
 import numpy as np
 from scipy import sparse
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 class GraphConvolution(nn.Module):
     def __init__(self, input_dim, output_dim, support=1, featureless=True,
