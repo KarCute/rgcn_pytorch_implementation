@@ -25,7 +25,7 @@ np.random.seed()
 torch.manual_seed(0)
 
 ap = argparse.ArgumentParser()
-ap.add_argument("-d", "--dataset", type=str, default="aifb",
+ap.add_argument("-d", "--dataset", type=str, default="FB15K237",
                 help="Dataset string ('aifb', 'mutag', 'bgs', 'am')")
 ap.add_argument("-e", "--epochs", type=int, default=50,
                 help="Number training epochs")
@@ -62,16 +62,17 @@ USE_CUDA = not args['no_cuda'] and torch.cuda.is_available()
 if USE_CUDA:
     torch.cuda.manual_seed(0)
 
+start_time = time.time()
 dirname = os.path.dirname(os.path.realpath(sys.argv[0]))
 
 with open(dirname + '/' + DATASET + '.pickle', 'rb') as f:
     data = pickle.load(f)
 
 A = data['A']
-y = data['y']
-train_idx = data['train_idx']
-val_idx = data['val_idx']
-test_idx = data['test_idx']
+y = np.array(data['y'].todense())
+idx_train = data['train_idx']
+idx_val = data['val_idx']
+idx_test = data['test_idx']
 del data
 
 for i in range(len(A)):
@@ -85,17 +86,15 @@ A = [i for i in A if len(i.nonzero()[0]) > 0]
 
 
 
-y_train, y_val, y_test, idx_train, idx_val, idx_test = get_splits(y, train_idx, val_idx, test_idx, True)
-output_dimension = y_train.shape[1]
+output_dimension = y.shape[1]
 support = len(A)
-y_train = torch.tensor(y_train)
-y_val = torch.tensor(y_val)
-y_test = torch.tensor(y_test)
+y = torch.tensor(y)
+idx_train = torch.LongTensor(idx_train)
+idx_val = torch.LongTensor(idx_val)
+idx_test = torch.LongTensor(idx_test)
 
 if USE_CUDA:
-    y_train = y_train.cuda()
-    y_val = y_val.cuda()
-    y_test = y_test.cuda()
+    y = y.cuda()
     idx_train = idx_train.cuda()
     idx_val = idx_val.cuda()
     idx_test = idx_test.cuda()
@@ -130,28 +129,31 @@ if __name__ == "__main__":
         output = model([X]+A)
 
         # loss = criterion(output[idx_train], gold)
-        loss = multi_labels_nll_loss(output[idx_train], y_train)
+        loss = multi_labels_nll_loss(output[idx_train], y[idx_train])
 
         # score = accuracy_score(output[idx_train].argmax(dim=-1), gold)
-        score = accuracy(output[idx_train], y_train, USE_CUDA)
+        score = accuracy(output[idx_train], y[idx_train], USE_CUDA)
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        val_output = output[idx_val]
         # test_score = accuracy_score(test_output.argmax(dim=-1), test_gold)
-        val_score = accuracy(val_output, y_val, USE_CUDA)
+        val_score = accuracy(output[idx_val], y[idx_val], USE_CUDA)
 
         # test_loss = criterion(test_output, test_gold)
-        val_loss = multi_labels_nll_loss(val_output, y_val)
+        val_loss = multi_labels_nll_loss(output[idx_val], y[idx_val])
 
-        print('Epoch: {:04dhao}'.format(epoch+1),
+        print("Epoch: {:04d}".format(epoch+1),
                 "train_accuracy: {:.4f}".format(score),
-                "train_loss: {:.4f}".format(loss.item()), 
+                "train_loss: {:.4f}".format(loss.item()),
                 "val_accuracy: {:.4f}".format(val_score),
                 "val_loss: {:.4f}".format(val_loss.item()),
                 "time: {:.4f}".format(time.time() - t))
-    test_output = output[idx_test]
-    test_score = accuracy(test_output, y_test, USE_CUDA)
-    test_loss = multi_labels_nll_loss(test_output, y_test)
-    print("test_accuracy:", test_score, "loss:",test_loss.item())
+
+    model.eval()
+    output = model([X]+A)
+    test_score = accuracy(output[idx_test], y[idx_test], USE_CUDA)
+    test_loss = multi_labels_nll_loss(output[idx_test], y[idx_test])
+    print("test_accuracy: {:.4f}".format(test_score),
+          "loss: {:.4f}".format(test_loss.item()),
+          "total time: {:.4f}".format(time.time() - start_time))
