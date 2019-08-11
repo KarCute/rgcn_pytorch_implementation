@@ -42,7 +42,7 @@ ap.add_argument("-l2", "--l2norm", type=float, default=0.,
 ap.add_argument('--no-cuda', action='store_true', default=False, 
                 help='Disables CUDA training.')
 fp = ap.add_mutually_exclusive_group(required=False)
-fp.add_argument('--validation', dest='validation', action='store_true')
+fp.add_argument('--validation', dest='validation', action='store_true', default=True)
 fp.add_argument('--testing', dest='validation', action='store_false')
 ap.set_defaults(validation=True)
 
