@@ -4,13 +4,13 @@ import numpy as np
 import torch
 
 
-def get_splits(y, train_idx, test_idx, validation=True):
+def get_splits(y, train_idx, val_idx, test_idx, validation=True):
     # Make dataset splits
     # np.random.shuffle(train_idx)
     if validation:
-        idx_train = train_idx[len(train_idx) / 5:] 
-        idx_val = train_idx[:len(train_idx) / 5]
-        idx_test = idx_val  # report final score on validation set for hyperparameter optimization
+        idx_train = train_idx
+        idx_val = val_idx
+        idx_test = test_idx
     else:
         idx_train = train_idx
         idx_val = train_idx  # no validation
@@ -43,6 +43,6 @@ def accuracy(output, labels, is_cuda):
 
 def multi_labels_nll_loss(output, labels):
     # labels和output按位点乘，结果相加，除以labels中1的总数，作为适用于多标签的nll_loss。
-    loss = -labels.type_as(output).mul(output).sum()
+    loss = labels.type_as(output).mul(output).sum()
     cnt = len(np.where(labels)[1])
     return loss / cnt
