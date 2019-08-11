@@ -18,8 +18,8 @@ from sklearn.metrics import accuracy_score
 from layers import *
 from utils import *
 
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#device = torch.device("cpu")
 print(torch.cuda.is_available())
 np.random.seed()
 torch.manual_seed(0)
@@ -39,6 +39,8 @@ ap.add_argument("-lr", "--learnrate", type=float, default=0.01,
                 help="Learning rate")
 ap.add_argument("-l2", "--l2norm", type=float, default=0.,
                 help="L2 normalization of input weights")
+ap.add_argument('--no-cuda', action='store_true', default=False, 
+                help='Disables CUDA training.')
 fp = ap.add_mutually_exclusive_group(required=False)
 fp.add_argument('--validation', dest='validation', action='store_true')
 fp.add_argument('--testing', dest='validation', action='store_false')
@@ -55,6 +57,10 @@ L2 = args['l2norm']
 HIDDEN = args['hidden']
 BASES = args['bases']
 DO = args['dropout']
+USE_CUDA = not args['no_cuda'] and torch.cuda.is_available()
+
+if USE_CUDA:
+    torch.cuda.manual_seed(0)
 
 dirname = os.path.dirname(os.path.realpath(sys.argv[0]))
 
@@ -64,6 +70,7 @@ with open(dirname + '/' + DATASET + '.pickle', 'rb') as f:
 A = data['A']
 y = data['y']
 train_idx = data['train_idx']
+val_idx = data['val_idx']
 test_idx = data['test_idx']
 del data
 
@@ -78,15 +85,20 @@ A = [i for i in A if len(i.nonzero()[0]) > 0]
 
 
 
-y_train, y_val, y_test, idx_train, idx_val, idx_test = get_splits(y, train_idx,
-                                                                  test_idx,
-                                                                  VALIDATION)
+y_train, y_val, y_test, idx_train, idx_val, idx_test = get_splits(y, train_idx, val_idx, test_idx, True)
 output_dimension = y_train.shape[1]
 support = len(A)
 y_train = torch.tensor(y_train)
 y_val = torch.tensor(y_val)
 y_test = torch.tensor(y_test)
 
+if USE_CUDA:
+    y_train = y_train.cuda()
+    y_val = y_val.cuda()
+    y_test = y_test.cuda()
+    idx_train = idx_train.cuda()
+    idx_val = idx_val.cuda()
+    idx_test = idx_test.cuda()
 
 class GraphClassifier(nn.Module):
     
@@ -108,31 +120,38 @@ class GraphClassifier(nn.Module):
 if __name__ == "__main__":
     model = GraphClassifier(A[0].shape[0], HIDDEN, output_dimension, BASES, DO, len(A))
     model.to(device)
+    if USE_CUDA:
+        model.cuda()
     optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=L2)
     criterion = nn.CrossEntropyLoss()
     X = sparse.csr_matrix(A[0].shape).todense()
     for epoch in range(NB_EPOCH):
         t = time.time()
         output = model([X]+A)
-        gold = y_train[idx_train]
 
         # loss = criterion(output[idx_train], gold)
-        loss = multi_labels_nll_loss(output[idx_train], gold)
+        loss = multi_labels_nll_loss(output[idx_train], y_train)
 
         # score = accuracy_score(output[idx_train].argmax(dim=-1), gold)
-        score = accuracy(output[idx_train], gold, False)
+        score = accuracy(output[idx_train], y_train, USE_CUDA)
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        print("train_accuracy:",score,"loss:,",loss.item(), "time:", time.time() - t)
-        test_gold = y_test[idx_test]
-        test_output = output[idx_test]
-
+        val_output = output[idx_val]
         # test_score = accuracy_score(test_output.argmax(dim=-1), test_gold)
-        test_score = accuracy(test_output, test_gold, False)
+        val_score = accuracy(val_output, y_val, USE_CUDA)
 
         # test_loss = criterion(test_output, test_gold)
-        test_loss = multi_labels_nll_loss(test_output, test_gold)
+        val_loss = multi_labels_nll_loss(val_output, y_val)
 
-        print("test_accuracy:", test_score, "loss:",test_loss.item())
+        print('Epoch: {:04dhao}'.format(epoch+1),
+                "train_accuracy: {:.4f}".format(score),
+                "train_loss: {:.4f}".format(loss.item()), 
+                "val_accuracy: {:.4f}".format(val_score),
+                "val_loss: {:.4f}".format(val_loss.item()),
+                "time: {:.4f}".format(time.time() - t))
+    test_output = output[idx_test]
+    test_score = accuracy(test_output, y_test, USE_CUDA)
+    test_loss = multi_labels_nll_loss(test_output, y_test)
+    print("test_accuracy:", test_score, "loss:",test_loss.item())
