@@ -114,15 +114,25 @@ if __name__ == "__main__":
     for epoch in range(NB_EPOCH):
         t = time.time()
         output = model([X]+A)
-        gold = y_train[idx_train].argmax(dim=-1)
-        loss = criterion(output[idx_train], gold)
-        score = accuracy_score(output[idx_train].argmax(dim=-1), gold)
+        gold = y_train[idx_train]
+
+        # loss = criterion(output[idx_train], gold)
+        loss = multi_labels_nll_loss(output[idx_train], gold)
+
+        # score = accuracy_score(output[idx_train].argmax(dim=-1), gold)
+        score = accuracy(output[idx_train], gold, False)
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         print("train_accuracy:",score,"loss:,",loss.item(), "time:", time.time() - t)
-        test_gold = y_test[idx_test].argmax(dim=-1)
+        test_gold = y_test[idx_test]
         test_output = output[idx_test]
-        test_score = accuracy_score(test_output.argmax(dim=-1), test_gold)
-        test_loss = criterion(test_output, test_gold)
+
+        # test_score = accuracy_score(test_output.argmax(dim=-1), test_gold)
+        test_score = accuracy(test_output, test_gold, False)
+
+        # test_loss = criterion(test_output, test_gold)
+        test_loss = multi_labels_nll_loss(test_output, test_gold)
+
         print("test_accuracy:", test_score, "loss:",test_loss.item())
