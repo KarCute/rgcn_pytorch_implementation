@@ -1,6 +1,5 @@
 from collections import Counter
 import torch
-from __future__ import print_function
 import scipy.sparse as sp
 import numpy as np
 
@@ -189,10 +188,6 @@ def two_class_accuracy(preds, labels, threshold=0.5):
     return np.mean(np.equal(labels, preds > 0.5))
 
 
-def accuracy(preds, labels):
-    return np.mean(np.equal(np.argmax(labels, 1), np.argmax(preds, 1)))
-
-
 def evaluate_preds(preds, labels, indices):
 
     split_loss = list()
@@ -252,7 +247,7 @@ def accuracy(output, labels, is_cuda):
     if is_cuda:
         preds = preds.cuda()
     correct = preds.type_as(labels).mul(labels).sum()
-    return correct.item() / cnt, preds
+    return correct.item() / cnt
 
 def multi_labels_nll_loss(output, labels):
     # labels和output按位点乘，结果相加，除以labels中1的总数，作为适用于多标签的nll_loss。
