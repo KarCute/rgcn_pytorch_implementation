@@ -73,8 +73,10 @@ def load_data_fb (path, dataset):
     val_name = name[len(name) // 10 * 8 : len(name) // 10 * 9]
     test_name = name[len(name) // 10 * 9 : len(name)]
     print('train_idx: ',train_idx)
+    print('val_idx: ', val_idx)
     print('test_idx: ', test_idx)
     print('train_name: ', train_name)
+    print('val_name: ', val_name)
     print('test_name: ', test_name)
 
 
@@ -115,14 +117,18 @@ def load_data_cora(path,dataset):
 
     # Divide train_idx and test_idx
     train_idx = range(len(idx_map) // 10 * 8)
-    test_idx = range(len(idx_map) // 10 * 8, len(idx_map))
-    name = np.array(idx_features_labels[:, 0], dtype=str)
-    train_name = name[0: len(name) // 10 * 8]
-    test_name = name[len(name) // 10 * 8: len(name)]
-    print('train_idx: ', train_idx)
+    val_idx = range(len(idx_map) // 10 * 8, len(idx_map) // 10 * 9)
+    test_idx = range(len(idx_map) // 10 * 9, len(idx_map))
+    name = np.array(idx_features_labels[:, 0],dtype=str)
+    train_name = name[0 : len(name) // 10 * 8]
+    val_name = name[len(name) // 10 * 8 : len(name) // 10 * 9]
+    test_name = name[len(name) // 10 * 9 : len(name)]
+    print('train_idx: ',train_idx)
+    print('val_idx: ', val_idx)
     print('test_idx: ', test_idx)
     print('train_name: ', train_name)
+    print('val_name: ', val_name)
     print('test_name: ', test_name)
 
     print('Loading {} dataset finishes...'.format(dataset))
-    return adjacencies, features, labels, labeled_nodes_idx, train_idx, test_idx, rel_dict, train_name, test_name
+    return adjacencies,features,labels,labeled_nodes_idx,train_idx,test_idx,val_idx,rel_dict,train_name,test_name,val_name
