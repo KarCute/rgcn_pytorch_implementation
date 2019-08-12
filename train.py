@@ -27,7 +27,7 @@ torch.manual_seed(0)
 ap = argparse.ArgumentParser()
 ap.add_argument("-d", "--dataset", type=str, default="FB15K237",
                 help="Dataset string ('aifb', 'mutag', 'bgs', 'am')")
-ap.add_argument("-e", "--epochs", type=int, default=50,
+ap.add_argument("-e", "--epochs", type=int, default=1000,
                 help="Number training epochs")
 ap.add_argument("-hd", "--hidden", type=int, default=16,
                 help="Number hidden units")
@@ -86,7 +86,7 @@ A = [i for i in A if len(i.nonzero()[0]) > 0]
 
 output_dimension = y.shape[1]
 support = len(A)
-y = torch.tensor(y)
+y = torch.FloatTensor(y)
 idx_train = torch.LongTensor(idx_train)
 idx_val = torch.LongTensor(idx_val)
 idx_test = torch.LongTensor(idx_test)
@@ -120,25 +120,30 @@ if __name__ == "__main__":
     if USE_CUDA:
         model.cuda()
     optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=L2)
-    criterion = nn.CrossEntropyLoss()
+    criterion = torch.nn.BCEWithLogitsLoss(size_average=True)
+    #criterion = nn.CrossEntropyLoss()
     X = sparse.csr_matrix(A[0].shape).todense()
     for epoch in range(NB_EPOCH):
         t = time.time()
         output = model([X]+A)
 
-        # loss = criterion(output[idx_train], gold)
+        output = F.log_softmax(output)
+        #loss = criterion(output[idx_train], y[idx_train])
         loss = multi_labels_nll_loss(output[idx_train], y[idx_train])
 
-        # score = accuracy_score(output[idx_train].argmax(dim=-1), gold)
+        #score = accuracy_score(output[idx_train].argmax(dim=-1), y[idx_train].argmax(dim=-1))
         score = accuracy(output[idx_train], y[idx_train], USE_CUDA)
-
+        print("score:", score)
+        print("type(score):", type(score))
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        # test_score = accuracy_score(test_output.argmax(dim=-1), test_gold)
+        model.eval()
+        output = model([X]+A)
+        output = F.log_softmax(output)
+        #val_score = accuracy_score(output[idx_val].argmax(dim=-1), y[idx_val].argmax(dim=-1))
         val_score = accuracy(output[idx_val], y[idx_val], USE_CUDA)
-
-        # test_loss = criterion(test_output, test_gold)
+        #val_loss = criterion(output[idx_val], y[idx_val])
         val_loss = multi_labels_nll_loss(output[idx_val], y[idx_val])
 
         print("Epoch: {:04d}".format(epoch+1),
@@ -150,6 +155,9 @@ if __name__ == "__main__":
 
     model.eval()
     output = model([X]+A)
+    output = F.log_softmax(output)
+    #test_score = accuracy_score(output[idx_test].argmax(dim=-1), y[idx_test].argmax(dim=-1))
+    #test_loss = criterion(output[idx_test], y[idx_test])
     test_score = accuracy(output[idx_test], y[idx_test], USE_CUDA)
     test_loss = multi_labels_nll_loss(output[idx_test], y[idx_test])
     print("test_accuracy: {:.4f}".format(test_score),

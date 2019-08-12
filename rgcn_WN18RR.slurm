@@ -5,4 +5,4 @@
 #SBATCH -c 5                # 申请CPU核数
 source /home/LAB/anaconda3/etc/profile.d/conda.sh
 conda activate cuda9.1
-CUDA_VISIBLE_DEVICES=1 python train.py -d WN18RR --bases 40 --hidden 16 --l2norm 5e-4 --testing
+CUDA_VISIBLE_DEVICES=1 python train.py -d WN18RR --bases 30 --hidden 16 --l2norm 5e-4 --testing
