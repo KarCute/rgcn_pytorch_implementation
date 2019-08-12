@@ -1,6 +1,4 @@
 from __future__ import print_function
-
-from data_utils import load_data
 from data_conversion import *
 from utils import *
 
