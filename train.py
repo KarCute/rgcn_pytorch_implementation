@@ -1,4 +1,5 @@
 import argparse
+import glob
 import time
 import sys
 import os
@@ -27,6 +28,8 @@ torch.manual_seed(0)
 ap = argparse.ArgumentParser()
 ap.add_argument("-d", "--dataset", type=str, default="FB15K237",
                 help="Dataset string ('aifb', 'mutag', 'bgs', 'am')")
+ap.add_argument("-bad", "--bad", type=int, default=100,
+                help="bad counter")
 ap.add_argument("-e", "--epochs", type=int, default=1000,
                 help="Number training epochs")
 ap.add_argument("-hd", "--hidden", type=int, default=16,
@@ -39,6 +42,8 @@ ap.add_argument("-lr", "--learnrate", type=float, default=0.01,
                 help="Learning rate")
 ap.add_argument("-l2", "--l2norm", type=float, default=0.,
                 help="L2 normalization of input weights")
+ap.add_argument('--experiment', type=str, default='GAT',
+                help='Name of current experiment.')
 ap.add_argument('--no-cuda', action='store_true', default=False, 
                 help='Disables CUDA training.')
 fp = ap.add_mutually_exclusive_group(required=False)
@@ -49,12 +54,14 @@ args = vars(ap.parse_args())
 print(args)
 
 DATASET = args['dataset']
+BAD = args['bad']
 NB_EPOCH = args['epochs']
 LR = args['learnrate']
 L2 = args['l2norm']
 HIDDEN = args['hidden']
 BASES = args['bases']
 DO = args['dropout']
+EXP = args['experiment']
 USE_CUDA = not args['no_cuda'] and torch.cuda.is_available()
 
 if USE_CUDA:
@@ -123,6 +130,17 @@ if __name__ == "__main__":
     criterion = torch.nn.BCEWithLogitsLoss(size_average=True)
     #criterion = nn.CrossEntropyLoss()
     X = sparse.csr_matrix(A[0].shape).todense()
+    loss_values = []
+    best = NB_EPOCH + 1
+    best_epoch = 0
+    bad_counter = 0
+
+    files = glob.glob('./{}/*.pkl'.format(EXP))
+    for file in files:
+        os.remove(file)
+    if not os.path.exists(EXP):
+        os.mkdir('{}'.format(EXP))
+
     for epoch in range(NB_EPOCH):
         t = time.time()
         output = model([X]+A)
@@ -152,6 +170,32 @@ if __name__ == "__main__":
                 "val_accuracy: {:.4f}".format(val_score),
                 "val_loss: {:.4f}".format(val_loss.item()),
                 "time: {:.4f}".format(time.time() - t))
+
+        loss_values.append(val_loss)
+        torch.save(model.state_dict(), './{}/{}.pkl'.format(EXP, epoch))
+        if loss_values[-1] < best:
+            best = loss_values[-1]
+            best_epoch = epoch
+            bad_counter = 0
+        else:
+            bad_counter += 1
+
+        # 损失连续100次迭代没有优化时，则提取停止
+        if bad_counter == BAD:
+            break
+        files = glob.glob('./{}/*.pkl'.format(EXP))
+        for file in files:
+            epoch_nb = int(file.split('/')[-1].split('.')[0])
+            if epoch_nb < best_epoch:
+                os.remove(file)
+
+    files = glob.glob('./{}/*.pkl'.format(EXP))
+    for file in files:
+        epoch_nb = int(file.split('/')[-1].split('.')[0])
+        if epoch_nb > best_epoch:
+            os.remove(file)
+    print('Loading {}th epoch'.format(best_epoch))
+    model.load_state_dict(torch.load('./{}/{}.pkl'.format(EXP, best_epoch)))
 
     model.eval()
     output = model([X]+A)
