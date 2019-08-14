@@ -74,6 +74,7 @@ with open(dirname + '/' + DATASET + '.pickle', 'rb') as f:
     data = pickle.load(f)
 
 A = data['A']
+X = data['X']
 y = np.array(data['y'].todense())
 idx_train = data['train_idx']
 idx_val = data['val_idx']
@@ -94,12 +95,14 @@ A = [i for i in A if len(i.nonzero()[0]) > 0]
 output_dimension = y.shape[1]
 support = len(A)
 y = torch.FloatTensor(y)
+X = torch.FloatTensor(X)
 idx_train = torch.LongTensor(idx_train)
 idx_val = torch.LongTensor(idx_val)
 idx_test = torch.LongTensor(idx_test)
 
 if USE_CUDA:
     y = y.cuda()
+    X = X.cuda()
     idx_train = idx_train.cuda()
     idx_val = idx_val.cuda()
     idx_test = idx_test.cuda()
@@ -110,7 +113,7 @@ class GraphClassifier(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, num_bases, dropout, support):
         super(GraphClassifier, self).__init__()
         self.gcn_1 = GraphConvolution(input_dim, hidden_dim, num_bases=num_bases, activation="relu",
-                                      support=support)
+                                      featureless=False, support=support)
         self.gcn_2 = GraphConvolution(hidden_dim, output_dim, num_bases=num_bases, activation="softmax",
                                      featureless=False, support=support)
         self.dropout = nn.Dropout(dropout)
@@ -129,7 +132,7 @@ if __name__ == "__main__":
     optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=L2)
     criterion = torch.nn.BCEWithLogitsLoss(size_average=True)
     #criterion = nn.CrossEntropyLoss()
-    X = sparse.csr_matrix(A[0].shape).todense()
+    #X = sparse.csr_matrix(A[0].shape).todense()
     loss_values = []
     best = NB_EPOCH + 1
     best_epoch = 0
