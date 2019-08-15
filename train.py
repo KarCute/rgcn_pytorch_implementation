@@ -75,6 +75,8 @@ with open(dirname + '/' + DATASET + '.pickle', 'rb') as f:
 
 A = data['A']
 X = data['X']
+X = np.array(X.todense())
+#y = data['y']
 y = np.array(data['y'].todense())
 idx_train = data['train_idx']
 idx_val = data['val_idx']
@@ -125,14 +127,14 @@ class GraphClassifier(nn.Module):
         return output
 
 if __name__ == "__main__":
-    model = GraphClassifier(A[0].shape[0], HIDDEN, output_dimension, BASES, DO, len(A))
+    model = GraphClassifier(X.shape[1], HIDDEN, output_dimension, BASES, DO, len(A))
     model.to(device)
     if USE_CUDA:
         model.cuda()
     optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=L2)
     criterion = torch.nn.BCEWithLogitsLoss(size_average=True)
     #criterion = nn.CrossEntropyLoss()
-    #X = sparse.csr_matrix(A[0].shape).todense()
+    #X = sparse.csr_matrix(X.shape).todense()
     loss_values = []
     best = NB_EPOCH + 1
     best_epoch = 0
