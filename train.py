@@ -27,7 +27,7 @@ torch.manual_seed(0)
 
 ap = argparse.ArgumentParser()
 ap.add_argument("-d", "--dataset", type=str, default="FB15K237",
-                help="Dataset string ('aifb', 'mutag', 'bgs', 'am')")
+                help="Dataset string ('FB15K237', 'WN18RR', 'WN18RR_sub30000', 'cora')")
 ap.add_argument("-bad", "--bad", type=int, default=100,
                 help="bad counter")
 ap.add_argument("-e", "--epochs", type=int, default=1000,
