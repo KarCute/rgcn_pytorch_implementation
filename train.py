@@ -40,7 +40,7 @@ ap.add_argument("-b", "--bases", type=int, default=-1,
                 help="Number of bases used (-1: all)")
 ap.add_argument("-lr", "--learnrate", type=float, default=0.01,
                 help="Learning rate")
-ap.add_argument("-l2", "--l2norm", type=float, default=0.,
+ap.add_argument("-l2", "--l2norm", type=float, default=0.6,
                 help="L2 normalization of input weights")
 ap.add_argument('--experiment', type=str, default='GAT',
                 help='Name of current experiment.')
@@ -74,8 +74,7 @@ with open(dirname + '/' + DATASET + '.pickle', 'rb') as f:
     data = pickle.load(f)
 
 A = data['A']
-X = data['X']
-X = np.array(X.todense())
+X = np.array(data['X'].todense())
 #y = data['y']
 y = np.array(data['y'].todense())
 idx_train = data['train_idx']
@@ -148,19 +147,19 @@ if __name__ == "__main__":
 
     for epoch in range(NB_EPOCH):
         t = time.time()
+        model.train()
+        optimizer.zero_grad()
         output = model([X]+A)
 
         output = F.log_softmax(output)
         #loss = criterion(output[idx_train], y[idx_train])
         loss = multi_labels_nll_loss(output[idx_train], y[idx_train])
-
         #score = accuracy_score(output[idx_train].argmax(dim=-1), y[idx_train].argmax(dim=-1))
         score = accuracy(output[idx_train], y[idx_train], USE_CUDA)
-        print("score:", score)
-        print("type(score):", type(score))
-        optimizer.zero_grad()
+
         loss.backward()
         optimizer.step()
+
         model.eval()
         output = model([X]+A)
         output = F.log_softmax(output)
