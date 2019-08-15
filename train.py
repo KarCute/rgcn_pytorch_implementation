@@ -209,5 +209,5 @@ if __name__ == "__main__":
     test_score = accuracy(output[idx_test], y[idx_test], USE_CUDA)
     test_loss = multi_labels_nll_loss(output[idx_test], y[idx_test])
     print("test_accuracy: {:.4f}".format(test_score),
-          "loss: {:.4f}".format(test_loss.item()),
+          "test_loss: {:.4f}".format(test_loss.item()),
           "total time: {:.4f}".format(time.time() - start_time))
