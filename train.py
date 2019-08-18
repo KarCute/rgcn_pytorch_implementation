@@ -21,7 +21,7 @@ from utils import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 #device = torch.device("cpu")
-print(torch.cuda.is_available())
+print("torch.cuda.is_available: {}".format(torch.cuda.is_available()))
 np.random.seed()
 torch.manual_seed(0)
 
@@ -63,6 +63,7 @@ BASES = args['bases']
 DO = args['dropout']
 EXP = args['experiment']
 USE_CUDA = not args['no_cuda'] and torch.cuda.is_available()
+print("USE_CUDA: {}".format(USE_CUDA))
 
 if USE_CUDA:
     torch.cuda.manual_seed(0)
