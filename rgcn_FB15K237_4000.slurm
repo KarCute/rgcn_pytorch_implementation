@@ -3,6 +3,7 @@
 #SBATCH -J rgcn_F4            # 任务名称
 #SBATCH --gres=gpu:V100:1               # 申请一张GPUV100
 #SBATCH -c 5                # 申请CPU核数
+#SBATCH -p sugon
 source /home/LAB/anaconda3/etc/profile.d/conda.sh
 conda activate cuda9.1
 if [ ! -a "FB15K237_4000.pickle" ]; then
