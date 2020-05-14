@@ -12,29 +12,29 @@ def encode_onehot(labels):
 
 # load dataset for rgcn
 # {adjacencies, features, labels, labeled_nodes_idx, train_idx, test_idx, relations_dict, train_names, test_names}
-def load_data_fb (path, dataset):
+def load_data_fb(path, dataset):
     print('Loading {} dataset...'.format(dataset))
     idx_features_labels = np.genfromtxt("{}{}.content".format(path, dataset), dtype=np.dtype(str))
 
     # Get features
     features = sp.csr_matrix(idx_features_labels[:, 1:-1], dtype=np.float32)
     features = sp.csr_matrix(features)
-    print('features: ', features)
+    # print('features: ', features)
 
     # Get labels and labeled_nodes_idx
     labels = list(map(lambda x: x.split(','), idx_features_labels[:, -1]))
     labels, nclass = encode_onehot(labels)
     labels = sp.csr_matrix(labels)
     labeled_nodes_idx = list(labels.nonzero()[0])
-    print('labels: ', labels)
+    # print('labels: ', labels)
 
     # Get relations_dict(temporarily unknown)
     rel_dict = {}
     idx_rel = np.genfromtxt("{}{}.rel".format(path, dataset), dtype=np.dtype(str))
     for index in range(len(idx_rel)):
-        e1 = idx_rel[: , 0]
+        e1 = idx_rel[:, 0]
         rel_dict[e1[index]] = index
-    print('rel_dict: ', rel_dict)
+    # print('rel_dict: ', rel_dict)
 
     # my method get classes adjancencies
     value = []
@@ -45,13 +45,16 @@ def load_data_fb (path, dataset):
         row.append([])
         col.append([])
     adjacencies = []
-    idx = np.array(idx_features_labels[:, 0], dtype=np.int32)
+    if dataset == 'cora':
+        idx = np.array(idx_features_labels[:, 0], dtype=np.int32)
+    else:
+        idx = np.array(idx_features_labels[:, 1], dtype=np.int32)
     idx_map = {j: i for i, j in enumerate(idx)}
     edges_unordered = np.genfromtxt("{}{}.cites".format(path, dataset), dtype=np.int32)
     # 将每组关系中的entity用索引表示
     edges = np.array(list(map(idx_map.get, edges_unordered[:, :2].flatten())), dtype=np.int32).reshape(edges_unordered[:, :2].shape)
-    e1 = np.array(edges[:, 0],dtype=np.int32)
-    e2 = np.array(edges[:, 1],dtype=np.int32)
+    e1 = np.array(edges[:, 0], dtype=np.int32)
+    e2 = np.array(edges[:, 1], dtype=np.int32)
     relation = np.array(edges_unordered[:, -1],dtype=np.int32)
     amount = len(relation)
     for index in range(amount):

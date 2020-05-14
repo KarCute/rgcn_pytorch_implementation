@@ -6,6 +6,6 @@
 source /home/LAB/anaconda3/etc/profile.d/conda.sh
 conda activate cuda9.1
 if [ ! -a "WN18RR_4000.pickle" ]; then
-     python prepare_dataset.py -d WN18RR_4000
+     CUDA_VISIBLE_DEVICES=0 python prepare_dataset.py -d WN18RR_4000
 fi
 CUDA_VISIBLE_DEVICES=1 python train.py -d WN18RR_4000 --bases 30 --hidden 16 --l2norm 5e-4 --testing --experiment rgcn_WN18RR_4000
