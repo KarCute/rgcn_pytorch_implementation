@@ -5,7 +5,7 @@
 #SBATCH -c 5                # 申请CPU核数
 source /home/LAB/anaconda3/etc/profile.d/conda.sh
 conda activate cuda9.1
-if [ ! -f "FB15K237_4000.pickle" ]; then
+if [ ! -a "FB15K237_4000.pickle" ]; then
      python prepare_dataset.py -d FB15K237_4000
 fi
 CUDA_VISIBLE_DEVICES=0 python train.py -d FB15K237_4000 --bases 30 --hidden 16 --l2norm 5e-4 --testing --experiment rgcn_FB15K237_4000
