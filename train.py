@@ -75,7 +75,7 @@ with open(dirname + '/' + DATASET + '.pickle', 'rb') as f:
     data = pickle.load(f)
 
 A = data['A']
-X = np.array(data['X'].todense())
+X = data['X']
 #y = data['y']
 y = np.array(data['y'].todense())
 idx_train = data['train_idx']
