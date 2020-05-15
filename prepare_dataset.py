@@ -24,14 +24,14 @@ DATASET = args['dataset']
 NUM_GC_LAYERS = 2  # Number of graph convolutional layers
 
 # Get data
-if DATASET == 'aifb' or DATASET == 'am' or DATASET == 'bgs' or DATASET == 'mutag':
-    A, X, y, labeled_nodes_idx, train_idx, test_idx, rel_dict, train_names, test_names = load_data(
-    DATASET)
-elif DATASET == 'cora':
+# if DATASET == 'aifb' or DATASET == 'am' or DATASET == 'bgs' or DATASET == 'mutag':
+#     A, X, y, labeled_nodes_idx, train_idx, test_idx, rel_dict, train_names, test_names = load_data(
+#     DATASET)
+if DATASET == 'cora':
     A, X, y, labeled_nodes_idx, train_idx, test_idx, val_idx, rel_dict, train_names, test_names, val_names = load_data_cora('../pyGAT/data/' + DATASET + '/',
     DATASET)
 else:
-    A, X, y, labeled_nodes_idx, train_idx, test_idx, val_idx, rel_dict, train_names, test_names, val_names = load_data_fb('../pyGAT/data/' + DATASET + '/',
+    A, X, y, labeled_nodes_idx, train_idx, test_idx, val_idx, rel_dict, train_names, test_names, val_names = load_data_other('../pyGAT/data/' + DATASET + '/',
     DATASET)
 
 # rel_list = list(range(len(A)))

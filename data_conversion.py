@@ -12,29 +12,17 @@ def encode_onehot(labels):
 
 # load dataset for rgcn
 # {adjacencies, features, labels, labeled_nodes_idx, train_idx, test_idx, relations_dict, train_names, test_names}
-def load_data_fb(path, dataset):
+def load_data_other(path, dataset):
     print('Loading {} dataset...'.format(dataset))
     idx_features_labels = np.genfromtxt("{}{}.content".format(path, dataset), dtype=np.dtype(str))
-
-    # Get features
-    features = sp.csr_matrix(idx_features_labels[:, 1:-1], dtype=np.float32)
-    features = sp.csr_matrix(features)
-    # print('features: ', features)
-
-    # Get labels and labeled_nodes_idx
+    features = np.array(idx_features_labels[:, 2:-1], dtype=np.float32)
     labels = list(map(lambda x: x.split(','), idx_features_labels[:, -1]))
     labels, nclass = encode_onehot(labels)
     labels = sp.csr_matrix(labels)
-    labeled_nodes_idx = list(labels.nonzero()[0])
-    # print('labels: ', labels)
+    labeled_nodes_idx = list(labels.nonzero()[0])  # labels中非0的行索引
 
-    # Get relations_dict(temporarily unknown)
-    rel_dict = {}
     idx_rel = np.genfromtxt("{}{}.rel".format(path, dataset), dtype=np.dtype(str))
-    for index in range(len(idx_rel)):
-        e1 = idx_rel[:, 0]
-        rel_dict[e1[index]] = index
-    # print('rel_dict: ', rel_dict)
+    rel_dict = {j: i for i, j in enumerate(np.array(idx_rel[:, 1], dtype=np.int32))}  # rel的id到序号到映射，解决relid有断开问题
 
     # my method get classes adjancencies
     value = []
@@ -45,36 +33,31 @@ def load_data_fb(path, dataset):
         row.append([])
         col.append([])
     adjacencies = []
-    if dataset == 'cora':
-        idx = np.array(idx_features_labels[:, 0], dtype=np.int32)
-    else:
-        idx = np.array(idx_features_labels[:, 1], dtype=np.int32)
+    idx = np.array(idx_features_labels[:, 1], dtype=np.int32)
     idx_map = {j: i for i, j in enumerate(idx)}
     edges_unordered = np.genfromtxt("{}{}.cites".format(path, dataset), dtype=np.int32)
-    # 将每组关系中的entity用索引表示
     edges = np.array(list(map(idx_map.get, edges_unordered[:, :2].flatten())), dtype=np.int32).reshape(edges_unordered[:, :2].shape)
+
+    # 以rel作为索引，创建adjacencies
     e1 = np.array(edges[:, 0], dtype=np.int32)
     e2 = np.array(edges[:, 1], dtype=np.int32)
-    relation = np.array(edges_unordered[:, -1],dtype=np.int32)
+    relation = np.array(edges_unordered[:, -1], dtype=np.int32)
     amount = len(relation)
     for index in range(amount):
-        value[relation[index]].append(1)
-        row[relation[index]].append(e1[index])
-        col[relation[index]].append(e2[index])
+        value[rel_dict[relation[index]]].append(1)
+        row[rel_dict[relation[index]]].append(e1[index])
+        col[rel_dict[relation[index]]].append(e2[index])
     for index in range(len(idx_rel)):
-        adjacencies.append(sp.coo_matrix((value[index],(row[index],col[index])), shape=(labels.shape[0],labels.shape[0]), dtype=np.float32))
-    print("adj1: {}".format(adjacencies[1]))
-    print("adj2: {}".format(adjacencies[2]))
-    print("adj3: {}".format(adjacencies[3]))
+        adjacencies.append(sp.coo_matrix((value[index], (row[index], col[index])), shape=(labels.shape[0], labels.shape[0]), dtype=np.float32))
 
     # Divide train_idx and test_idx
     train_idx = range(len(idx_map) // 10 * 8)
     val_idx = range(len(idx_map) // 10 * 8, len(idx_map) // 10 * 9)
     test_idx = range(len(idx_map) // 10 * 9, len(idx_map))
-    name = np.array(idx_features_labels[:, 0],dtype=str)
+    name = np.array(idx_features_labels[:, 0], dtype=str)
     train_name = name[0 : len(name) // 10 * 8]
-    val_name = name[len(name) // 10 * 8 : len(name) // 10 * 9]
-    test_name = name[len(name) // 10 * 9 : len(name)]
+    val_name = name[len(name) // 10 * 8: len(name) // 10 * 9]
+    test_name = name[len(name) // 10 * 9: len(name)]
     print('train_idx: ',train_idx)
     print('val_idx: ', val_idx)
     print('test_idx: ', test_idx)
@@ -82,9 +65,8 @@ def load_data_fb(path, dataset):
     print('val_name: ', val_name)
     print('test_name: ', test_name)
 
-
     print('Loading {} dataset finishes...'.format(dataset))
-    return adjacencies,features,labels,labeled_nodes_idx,train_idx,test_idx,val_idx,rel_dict,train_name,test_name,val_name
+    return adjacencies, features, labels, labeled_nodes_idx, train_idx, test_idx, val_idx, rel_dict, train_name, test_name, val_name
 
 def load_data_cora(path,dataset):
     print('Loading {} dataset...'.format(dataset))
@@ -103,7 +85,7 @@ def load_data_cora(path,dataset):
     print('labels: ', labels)
 
     # Get relations_dict(temporarily unknown)
-    rel_dict = {'0':0}
+    rel_dict = {'0': 0}
 
     # my method get classes adjancencies
     adjacencies = []
