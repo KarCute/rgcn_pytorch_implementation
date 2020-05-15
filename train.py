@@ -76,6 +76,8 @@ with open(dirname + '/' + DATASET + '.pickle', 'rb') as f:
 
 A = data['A']
 X = data['X']
+if DATASET == 'cora':
+    X = np.array(X.todense())
 #y = data['y']
 y = np.array(data['y'].todense())
 idx_train = data['train_idx']

@@ -64,7 +64,7 @@ for i in range(len(A)):
     csr_zero_rows(A[i].tocsr(), todel)
 
 data = {'A': A,
-        'X': X if DATASET != 'cora' else np.array(X.todense()),
+        'X': X,
         'y': y,
         'train_idx': train_idx,
         'test_idx': test_idx,
