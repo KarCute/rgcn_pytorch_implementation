@@ -9,4 +9,4 @@ conda activate cuda9.1
 if [ ! -f "cora.pickle" ]; then
      CUDA_VISIBLE_DEVICES=0 python prepare_dataset.py -d cora
 fi
-CUDA_VISIBLE_DEVICES=0 python train.py -d cora --bases 30 --hidden 16 --l2norm 5e-4 --testing --experiment rgcn_cora
+CUDA_VISIBLE_DEVICES=1 python train.py -d cora --bases 30 --hidden 16 --l2norm 5e-4 --testing --experiment rgcn_cora
