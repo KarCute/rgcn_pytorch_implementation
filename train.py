@@ -158,7 +158,7 @@ if __name__ == "__main__":
         #loss = criterion(output[idx_train], y[idx_train])
         loss = multi_labels_nll_loss(output[idx_train], y[idx_train])
         #score = accuracy_score(output[idx_train].argmax(dim=-1), y[idx_train].argmax(dim=-1))
-        score = accuracy(output[idx_train], y[idx_train], USE_CUDA)
+        score, preds = accuracy(output[idx_train], y[idx_train], USE_CUDA)
 
         loss.backward()
         optimizer.step()
@@ -167,7 +167,7 @@ if __name__ == "__main__":
         output = model([X]+A)
         output = F.log_softmax(output)
         #val_score = accuracy_score(output[idx_val].argmax(dim=-1), y[idx_val].argmax(dim=-1))
-        val_score = accuracy(output[idx_val], y[idx_val], USE_CUDA)
+        val_score, preds = accuracy(output[idx_val], y[idx_val], USE_CUDA)
         #val_loss = criterion(output[idx_val], y[idx_val])
         val_loss = multi_labels_nll_loss(output[idx_val], y[idx_val])
 
@@ -209,7 +209,7 @@ if __name__ == "__main__":
     output = F.log_softmax(output)
     #test_score = accuracy_score(output[idx_test].argmax(dim=-1), y[idx_test].argmax(dim=-1))
     #test_loss = criterion(output[idx_test], y[idx_test])
-    test_score = accuracy(output[idx_test], y[idx_test], USE_CUDA)
+    test_score, preds = accuracy(output[idx_test], y[idx_test], USE_CUDA)
     test_loss = multi_labels_nll_loss(output[idx_test], y[idx_test])
     print("test_accuracy: {:.4f}".format(test_score),
           "test_loss: {:.4f}".format(test_loss.item()),
